@@ -20,10 +20,13 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
 
         $user = User::factory()->create([
-            'name' => 'Test User',
+            'nombre' => 'Test',
+            'apellido' => 'Admin',
             'email' => 'test@example.com',
         ]);
 
         $user->assignRole('SuperAdmin');
+
+        $this->call(InformacionClienteSeeder::class);
     }
 }
