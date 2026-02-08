@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\InformacionCliente;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -13,14 +14,20 @@ use function Livewire\Volt\state;
 layout('layouts.guest');
 
 state([
-    'name' => '',
+    'nombre' => '',
+    'apellido' => '',
+    'genero' => '',
+    'fecha_nacimiento' => '',
     'email' => '',
     'password' => '',
     'password_confirmation' => ''
 ]);
 
 rules([
-    'name' => ['required', 'string', 'max:255'],
+    'nombre' => ['required', 'string', 'max:255'],
+    'apellido' => ['required', 'string', 'max:255'],
+    'genero' => ['required', 'in:Hombre,Mujer,Prefiero no decir,Otro'],
+    'fecha_nacimiento' => ['required', 'date', 'before:today'],
     'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
     'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
 ]);
@@ -30,22 +37,62 @@ $register = function () {
 
     $validated['password'] = Hash::make($validated['password']);
 
-    event(new Registered($user = User::create($validated)));
+    $userData = [
+        'nombre' => $validated['nombre'],
+        'apellido' => $validated['apellido'],
+        'email' => $validated['email'],
+        'password' => $validated['password'],
+    ];
+
+    event(new Registered($user = User::create($userData)));
+
+    InformacionCliente::create([
+        'user_id' => $user->id,
+        'genero' => $validated['genero'],
+        'fecha_nacimiento' => $validated['fecha_nacimiento'],
+    ]);
 
     Auth::login($user);
 
-    $this->redirect(route('dashboard', absolute: false), navigate: true);
+    $this->redirect(route('perfil', absolute: false), navigate: true);
 };
 
 ?>
 
 <div>
     <form wire:submit="register">
-        <!-- Name -->
+        <!-- Nombre -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input wire:model="name" id="name" class="block mt-1 w-full" type="text" name="name" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+            <x-input-label for="nombre" :value="__('Nombre')" />
+            <x-text-input wire:model="nombre" id="nombre" class="block mt-1 w-full" type="text" name="nombre" required autofocus autocomplete="given-name" />
+            <x-input-error :messages="$errors->get('nombre')" class="mt-2" />
+        </div>
+
+        <!-- Apellido -->
+        <div class="mt-4">
+            <x-input-label for="apellido" :value="__('Apellido')" />
+            <x-text-input wire:model="apellido" id="apellido" class="block mt-1 w-full" type="text" name="apellido" required autocomplete="family-name" />
+            <x-input-error :messages="$errors->get('apellido')" class="mt-2" />
+        </div>
+
+        <!-- Género -->
+        <div class="mt-4">
+            <x-input-label for="genero" :value="__('Género')" />
+            <select wire:model="genero" id="genero" name="genero" class="block mt-1 w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500" required>
+                <option value="" disabled>{{ __('Selecciona una opción') }}</option>
+                <option value="Hombre">{{ __('Hombre') }}</option>
+                <option value="Mujer">{{ __('Mujer') }}</option>
+                <option value="Prefiero no decir">{{ __('Prefiero no decir') }}</option>
+                <option value="Otro">{{ __('Otro') }}</option>
+            </select>
+            <x-input-error :messages="$errors->get('genero')" class="mt-2" />
+        </div>
+
+        <!-- Fecha de nacimiento -->
+        <div class="mt-4">
+            <x-input-label for="fecha_nacimiento" :value="__('Fecha de nacimiento')" />
+            <x-text-input wire:model="fecha_nacimiento" id="fecha_nacimiento" class="block mt-1 w-full" type="date" name="fecha_nacimiento" required />
+            <x-input-error :messages="$errors->get('fecha_nacimiento')" class="mt-2" />
         </div>
 
         <!-- Email Address -->
